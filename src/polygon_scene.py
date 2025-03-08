@@ -13,6 +13,11 @@ class Segment:
     def draw(self) -> None:
         GLUtils.draw_line(self.points)
 
+    def len(self) -> float:
+        return (
+            abs(self.points[0].x - self.points[1].x) +
+            abs(self.points[0].y - self.points[1].y)
+        )
 
 class Polygon:
     def __init__(self, points: list) -> None:
@@ -32,7 +37,7 @@ class PolygonScene(GLScene):
         super().__init__(title, width, height, max_fps)
         self.polygons = [
             Polygon([[-0.8, 0.2], [-0.6, 0.6], [-0.5, 0.4], [-0.15, 0.27]]),
-            #Polygon([[-0.5, -0.6], [-0.8, -0.6], [-0.2, -0.4], [-0.46, -0.92]]),
+            Polygon([[-0.5, -0.6], [-0.8, -0.6], [-0.2, -0.4], [-0.46, -0.92]]),
             Polygon([[0.33, -0.125], [0, -0.2], [0.2, 0.2], [0.4, 0.045], [0.8, 0.2], [0.62, -0.27]])
         ]
 
@@ -48,15 +53,31 @@ def positive_arctan2(y: np.ndarray, x: np.ndarray) -> np.ndarray:
 class VisibilityGraphPlanner:
     def __init__(self, scene: PolygonScene, start: Point, goal: Point) -> None:
         self.scene = scene
-        self.start = start
-        self.goal = goal
+        self._start = start
+        self._goal = goal
         self.vertices = [
             vertex
             for polygon in self.scene.polygons
             for vertex in polygon.points
         ]
         self.n_vertices = len(self.vertices)
-        self.gfraph = self.get_graph()
+        self.graph = self.get_static_graph()
+
+    @property
+    def start(self) -> Point:
+        return self._start
+
+    @start.setter
+    def start(self, point: Point) -> None:
+        self._start = point
+
+    @property
+    def goal(self) -> Point:
+        return self._goal
+
+    @goal.setter
+    def goal(self, point: Point) -> None:
+        self._goal = point
 
     def lines_intersect(self, line_1: Segment, line_2: Segment) -> bool:
         if line_1.points[0] in line_2.points:
@@ -124,11 +145,12 @@ class VisibilityGraphPlanner:
         while prev_angle < next_to_angle:
             prev_angle += 2*np.pi
 
-        print(start_idx, next_to_angle, angle, prev_angle)
         return next_to_angle < angle < prev_angle
     
-    def get_graph(self) -> np.ndarray:
-        graph = -np.ones((self.n_vertices, self.n_vertices))
+    def get_static_graph(self) -> np.ndarray:
+        graph = -np.ones((self.n_vertices + 2, self.n_vertices + 2))
+
+        #Computing graph using polygons only
         for i in range(1, self.n_vertices):
             start = self.vertices[i]
             start_polygon = self.get_vertex_polygon(start)
@@ -143,32 +165,53 @@ class VisibilityGraphPlanner:
                     continue
                 segment = Segment(start, goal)
                 if self.is_segment_free(segment):
-                    graph[i][j] = (
-                        abs(start.x - goal.x) +
-                        abs(start.y - goal.y)
-                    )
-        return graph
+                    graph[i][j] = segment.len()
 
-    def draw(self):
-        for i in range(1, self.n_vertices):
-            start = self.vertices[i]
-            for j in range(i):
-                goal = self.vertices[j]
-                if self.gfraph[i][j] == -1:
-                    continue
-                Segment(start, goal).draw()
+        #Start to polygons' vertices
+        for j, vertex in enumerate(self.vertices):
+            segment = Segment(self._start, vertex)
+            if self.is_segment_free(segment):
+                graph[self.n_vertices][j] = segment.len()
+
+        #Goal to all other vertices
+        for j, vertex in enumerate(self.vertices + [self._start]):
+            segment = Segment(self._goal, vertex)
+            if self.is_segment_free(segment):
+                graph[self.n_vertices + 1][j] = segment.len()
+        return graph
 
 
 class VisibilityGraphScene(PolygonScene):
     def __init__(self, title: str, width: int, height: int, max_fps: int) -> None:
         super().__init__(title, width, height, max_fps)
-        self.start = Point(0, 0)
-        self.goal = Point(0.5, 0.5)
-        self.planner = VisibilityGraphPlanner(self, self.start, self.goal)
+        self.planner = VisibilityGraphPlanner(self, Point(-0.9, 0.9), Point(0.9, 0.9))
+
+    def draw_visibility_graph(self):
+        for i in range(1, self.planner.n_vertices):
+            start = self.planner.vertices[i]
+            for j in range(i):
+                goal = self.planner.vertices[j]
+                if self.planner.graph[i][j] == -1:
+                    continue
+                Segment(start, goal).draw()
+
+        GLUtils.draw_points([self.planner.start, self.planner.goal])
+        for j, vertex in enumerate(self.planner.vertices):
+            if self.planner.graph[self.planner.n_vertices][j] == -1:
+                continue
+            Segment(self.planner.start, vertex).draw()
+
+        for j, vertex in enumerate(self.planner.vertices):
+            if self.planner.graph[self.planner.n_vertices + 1][j] == -1:
+                continue
+            Segment(self.planner.goal, vertex).draw()
+
+        if self.planner.graph[self.planner.n_vertices + 1][self.planner.n_vertices] != -1:
+            Segment(self.planner.goal, self.planner.start).draw()
 
     def render(self) -> None:
         super().render()
-        self.planner.draw()
+        self.draw_visibility_graph()
 
     
 if __name__ == '__main__':
