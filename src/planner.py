@@ -10,15 +10,39 @@ from shapes import Segment, Polygon, Path
 EPS = sys.float_info.epsilon
 
 class VisibilityGraphPlanner:
-    def __init__(self, scene: GLScene, start: Point, goal: Point) -> None:
+    def __init__(self, scene: GLScene, start: Point, goal: Point, complete: bool = False) -> None:
         self.scene = scene
         self._start = start
         self._goal = goal
-        self.vertices = [
-            vertex
-            for polygon in self.scene.polygons
-            for vertex in polygon.points
-        ]
+
+        self.vertices = []
+        for polygon in self.scene.polygons:
+            for i, vertex in enumerate(polygon.points):
+                if complete:
+                    self.vertices.append(vertex)
+                    continue
+                prev_vertex = polygon.points[(i - 1) % polygon.n_vertices]
+                next_vertex = polygon.points[(i + 1) % polygon.n_vertices]
+                prev_angle = np.arctan2(
+                    prev_vertex.y - vertex.y,
+                    prev_vertex.x - vertex.x
+                )
+                if prev_angle < 0:
+                    prev_angle += 2*np.pi
+                next_angle = np.arctan2(
+                    next_vertex.y - vertex.y,
+                    next_vertex.x - vertex.x
+                )
+                if next_angle < 0:
+                    next_angle += 2*np.pi
+                print(prev_vertex, vertex, next_vertex)
+                print(prev_angle, next_angle)
+                print(next_angle - prev_angle)
+                if not 0 < next_angle - prev_angle < np.pi:
+                    continue
+                self.vertices.append(vertex)
+
+
         self.n_vertices = len(self.vertices)
         self.graph = np.zeros((self.n_vertices + 2, self.n_vertices + 2))
         self.reset_static_graph()

@@ -26,9 +26,10 @@ def positive_arctan2(y: np.ndarray, x: np.ndarray) -> np.ndarray:
 
 
 class VisibilityGraphScene(PolygonScene):
-    def __init__(self, title: str, width: int, height: int, max_fps: int) -> None:
+    def __init__(self, title: str, width: int, height: int, max_fps: int, *args, **kwargs) -> None:
         super().__init__(title, width, height, max_fps)
-        self.planner = VisibilityGraphPlanner(self, Point(-0.9, 0.9), Point(0.9, 0.9))
+        complete = kwargs.get("complete", False)
+        self.planner = VisibilityGraphPlanner(self, Point(-0.9, 0.9), Point(0.9, 0.9), complete)
 
     def draw_visibility_graph(self):
         for i in range(1, self.planner.n_vertices):
@@ -74,3 +75,15 @@ class VisibilityGraphScene(PolygonScene):
         super().render()
         self.draw_visibility_graph()
         self.shortest_path.draw()
+        GLUtils.draw_point(
+            self.planner.start.x,
+            self.planner.start.y,
+            5,
+            color = (1, 1, 1, 1)
+        )
+        GLUtils.draw_point(
+            self.planner.goal.x,
+            self.planner.goal.y,
+            15,
+            color = (0.8, 0.8, 0.8, 1)
+        )
