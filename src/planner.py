@@ -35,9 +35,6 @@ class VisibilityGraphPlanner:
                 )
                 if next_angle < 0:
                     next_angle += 2*np.pi
-                print(prev_vertex, vertex, next_vertex)
-                print(prev_angle, next_angle)
-                print(next_angle - prev_angle)
                 if not 0 < next_angle - prev_angle < np.pi:
                     continue
                 self.vertices.append(vertex)
