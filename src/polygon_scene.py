@@ -90,14 +90,39 @@ class VisibilityGraphPlanner:
             return False
         return True
 
+    def is_segment_free(self, segment: Segment) -> bool:
+        for polygon in self.scene.polygons:
+            n_vertices = len(polygon.points)
+            for i in range(n_vertices):
+                end_a = polygon.points[i]
+                end_b = polygon.points[(i + 1) % n_vertices]
+                edge = Segment(end_a, end_b)
+                if self.lines_intersect(segment, edge):
+                    return False
+        return True
+
+
     def get_graph(self) -> np.ndarray:
-        return np.zeros((self.n_vertices, self.n_vertices))
+        graph = -np.ones((self.n_vertices, self.n_vertices))
+        for i in range(1, self.n_vertices):
+            start = self.vertices[i]
+            for j in range(i):
+                goal = self.vertices[j]
+                segment = Segment(start, goal)
+                if self.is_segment_free(segment):
+                    graph[i][j] = (
+                        abs(start.x - goal.x) +
+                        abs(start.y - goal.y)
+                    )
+        return graph
 
     def draw(self):
         for i in range(1, self.n_vertices):
             start = self.vertices[i]
             for j in range(i):
                 goal = self.vertices[j]
+                if self.gfraph[i][j] == -1:
+                    continue
                 Segment(start, goal).draw()
 
 
