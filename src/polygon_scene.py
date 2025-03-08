@@ -2,6 +2,8 @@ import sys
 
 import numpy as np
 import pygame
+from scipy.sparse import csr_array
+from scipy.sparse.csgraph import dijkstra
 
 from scene.scenes import Point, GLUtils, GLScene
 
@@ -245,6 +247,9 @@ class VisibilityGraphScene(PolygonScene):
                     self.planner.start = ortho
                 if event.button == 3: #Right click
                     self.planner.goal = ortho
+
+    def update(self) -> None:
+        super().update()
 
     def render(self) -> None:
         super().render()
