@@ -18,6 +18,9 @@ class Point:
     def __str__(self) -> str:
         return f"(x:{self.x}, y:{self.y}) "
 
+    def to_numpy(self) -> np.ndarray:
+        return np.asarray([self.x, self.y])
+
 class Line:
     def __init__(self) -> None:
         self.points = []
@@ -29,6 +32,9 @@ class Line:
         if self.points and self.points[-1] == new_point:
             return
         self.points.append(new_point)
+
+    def to_numpy(self) -> np.ndarray:
+        return np.asarray([point.to_numpy() for point in self.points])
 
 class Loop(Line):
     def __init__(self) -> None:
