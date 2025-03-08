@@ -1,6 +1,7 @@
 import sys
 
 import numpy as np
+import pygame
 
 from scene.scenes import Point, GLUtils, GLScene
 
@@ -15,9 +16,9 @@ class Segment:
 
     def len(self) -> float:
         return (
-            abs(self.points[0].x - self.points[1].x) +
-            abs(self.points[0].y - self.points[1].y)
-        )
+            (self.points[0].x - self.points[1].x)**2 +
+            (self.points[0].y - self.points[1].y)**2
+        )**0.5
 
 class Polygon:
     def __init__(self, points: list) -> None:
@@ -61,7 +62,8 @@ class VisibilityGraphPlanner:
             for vertex in polygon.points
         ]
         self.n_vertices = len(self.vertices)
-        self.graph = self.get_static_graph()
+        self.graph = np.zeros((self.n_vertices + 2, self.n_vertices + 2))
+        self.reset_static_graph()
 
     @property
     def start(self) -> Point:
@@ -70,6 +72,22 @@ class VisibilityGraphPlanner:
     @start.setter
     def start(self, point: Point) -> None:
         self._start = point
+        self._update_start_edges()
+
+    def _update_start_edges(self) -> None:
+        #Start to polygons' vertices
+        for j, vertex in enumerate(self.vertices):
+            segment = Segment(self._start, vertex)
+            if self.is_segment_free(segment):
+                self.graph[self.n_vertices][j] = segment.len()
+            else:
+                self.graph[self.n_vertices][j] = -1
+        
+        segment = Segment(self._start, self._goal)
+        if self.is_segment_free(segment):
+            self.graph[self.n_vertices + 1][self.n_vertices] = segment.len()
+        else:
+            self.graph[self.n_vertices + 1][self.n_vertices] = -1
 
     @property
     def goal(self) -> Point:
@@ -78,6 +96,17 @@ class VisibilityGraphPlanner:
     @goal.setter
     def goal(self, point: Point) -> None:
         self._goal = point
+        self._update_goal_edges()
+
+    def _update_goal_edges(self) -> None:
+        #Goal to all other vertices
+        for j, vertex in enumerate(self.vertices + [self._start]):
+            segment = Segment(self._goal, vertex)
+            if self.is_segment_free(segment):
+                self.graph[self.n_vertices + 1][j] = segment.len()
+            else:
+                self.graph[self.n_vertices + 1][j] = -1
+
 
     def lines_intersect(self, line_1: Segment, line_2: Segment) -> bool:
         if line_1.points[0] in line_2.points:
@@ -147,9 +176,8 @@ class VisibilityGraphPlanner:
 
         return next_to_angle < angle < prev_angle
     
-    def get_static_graph(self) -> np.ndarray:
-        graph = -np.ones((self.n_vertices + 2, self.n_vertices + 2))
-
+    def reset_static_graph(self) -> np.ndarray:
+        self.graph = np.zeros((self.n_vertices + 2, self.n_vertices + 2))
         #Computing graph using polygons only
         for i in range(1, self.n_vertices):
             start = self.vertices[i]
@@ -162,23 +190,19 @@ class VisibilityGraphPlanner:
                     self.is_inner_diagonal(start, goal, start_polygon)
                 )
                 if inner_diagonal:
+                    self.graph[i][j] = -1
                     continue
                 segment = Segment(start, goal)
                 if self.is_segment_free(segment):
-                    graph[i][j] = segment.len()
+                    self.graph[i][j] = segment.len()
+                else:
+                    self.graph[i][j] = -1
 
         #Start to polygons' vertices
-        for j, vertex in enumerate(self.vertices):
-            segment = Segment(self._start, vertex)
-            if self.is_segment_free(segment):
-                graph[self.n_vertices][j] = segment.len()
+        self._update_start_edges()
 
         #Goal to all other vertices
-        for j, vertex in enumerate(self.vertices + [self._start]):
-            segment = Segment(self._goal, vertex)
-            if self.is_segment_free(segment):
-                graph[self.n_vertices + 1][j] = segment.len()
-        return graph
+        self._update_goal_edges()
 
 
 class VisibilityGraphScene(PolygonScene):
@@ -208,6 +232,19 @@ class VisibilityGraphScene(PolygonScene):
 
         if self.planner.graph[self.planner.n_vertices + 1][self.planner.n_vertices] != -1:
             Segment(self.planner.goal, self.planner.start).draw()
+
+    def get_inputs(self) -> None:
+        super().get_inputs()
+        for event in self.events:
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                x, y = pygame.mouse.get_pos()
+                screen_point = Point(x, y)
+                ortho = self.to_ortho(screen_point)
+                ortho.y *= -1
+                if event.button == 1: #Left click
+                    self.planner.start = ortho
+                if event.button == 3: #Right click
+                    self.planner.goal = ortho
 
     def render(self) -> None:
         super().render()
