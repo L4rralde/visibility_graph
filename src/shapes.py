@@ -1,5 +1,7 @@
-from scene.scenes import Point, GLUtils, GLScene
+from OpenGL.GL import *
+from OpenGL.GLU import *
 
+from scene.scenes import Point, GLUtils, GLScene
 
 class Segment:
     def __init__(self, point_i: Point, point_j: Point) -> None:
@@ -26,3 +28,16 @@ class Polygon:
 
     def draw(self) -> None:
         GLUtils.draw_polygon(self.points)
+
+
+class Path:
+    def __init__(self, points: list) -> None:
+        self.points = points
+
+    def draw(self) -> None:
+        glPointSize(2)
+        glColor(0.5, 0.5, 0.5, 1)
+        glBegin(GL_LINE_STRIP)
+        for point in self.points:
+            glVertex2f(point.x, point.y)
+        glEnd()

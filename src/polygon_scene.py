@@ -14,6 +14,7 @@ class PolygonScene(GLScene):
             Polygon([[-0.5, -0.6], [-0.8, -0.6], [-0.2, -0.4], [-0.46, -0.92]]),
             Polygon([[0.33, -0.125], [0, -0.2], [0.2, 0.2], [0.4, 0.045], [0.8, 0.2], [0.62, -0.27]])
         ]
+        self.shortest_path = None
 
     def render(self) -> None:
         super().render()
@@ -67,7 +68,9 @@ class VisibilityGraphScene(PolygonScene):
 
     def update(self) -> None:
         super().update()
+        self.shortest_path = self.planner.shortest_path()
 
     def render(self) -> None:
         super().render()
         self.draw_visibility_graph()
+        self.shortest_path.draw()

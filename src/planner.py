@@ -1,9 +1,11 @@
 import sys
 
 import numpy as np
+from scipy.sparse import csr_array
+from scipy.sparse.csgraph import dijkstra
 
 from scene.scenes import Point, GLScene
-from shapes import Segment, Polygon
+from shapes import Segment, Polygon, Path
 
 EPS = sys.float_info.epsilon
 
@@ -160,3 +162,36 @@ class VisibilityGraphPlanner:
         #Goal to all other vertices
         self._update_goal_edges()
 
+    def shortest_path(self, start: Point = None, goal: Point = None) -> list:
+        if start is None:
+            start = self._start
+        if goal is None:
+            goal = self._goal
+
+        graph = csr_array(self.graph.T)
+        graph[graph < 0] = np.inf
+
+        j = self.n_vertices + 1
+        i = self.n_vertices
+
+        _, predecessors = dijkstra(
+            csgraph=graph,
+            directed=False,
+            indices = i,
+            return_predecessors=True
+        )
+        
+        path = []
+
+        current = j
+        while current != i:
+            path.append(current)
+            current = predecessors[current]
+            if current == -9999:
+                raise ValueError("No path exists.")
+        path.append(current)
+
+        all_vertices = self.vertices + [self._start, self._goal]
+        vertices_path = [all_vertices[vertex_i] for vertex_i in path]
+
+        return Path(vertices_path)
