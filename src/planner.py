@@ -210,6 +210,10 @@ class VisibilityGraphPlanner:
 
         return Path(vertices_path)
 
+    def reached_goal(self, th: float = 0.0005) -> bool:
+        dx = self._goal.x - self._start.x
+        dy = self._goal.y - self._start.y
+        return dx**2 + dy**2 < th
 
 class ReducedVisibilityGraphPlanner(VisibilityGraphPlanner):
     def __init__(

@@ -55,3 +55,10 @@ class Path:
             size=2,
             color=(0.5, 0.5, 0.5, 1)
         )
+
+    def __getitem__(self, idx: int) -> Point:
+        return self.points[idx]
+
+    def __repr__(self) -> str:
+        points_strs = [str(point) for point in self.points]
+        return ", ".join(points_strs)

@@ -4,6 +4,7 @@ import pygame
 from scene.scenes import Point, GLUtils, GLScene
 from shapes import Polygon, Segment
 from planner import VisibilityGraphPlanner, ReducedVisibilityGraphPlanner
+from driver import ConstantVelocityParticle
 
 
 default_polygons = [
@@ -60,6 +61,8 @@ class VisibilityGraphScene(PolygonScene):
                 *args,
                 **kwargs
             )
+        self.driver = ConstantVelocityParticle(self.planner)
+        self.pause = True
 
     def draw_visibility_graph(self):
         for i in range(1, self.planner.n_vertices):
@@ -99,10 +102,15 @@ class VisibilityGraphScene(PolygonScene):
                     self.planner.start = ortho
                 if event.button == 3: #Right click
                     self.planner.goal = ortho
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_p:
+                    self.pause = not self.pause
 
     def update(self) -> None:
         super().update()
         self.shortest_path = self.planner.shortest_path()
+        if not self.pause:
+            self.driver.update(self.delta_time)
 
     def render(self) -> None:
         super().render()
