@@ -10,7 +10,14 @@ from shapes import Segment, Polygon, Path
 EPS = sys.float_info.epsilon
 
 class VisibilityGraphPlanner:
-    def __init__(self, scene: GLScene, start: Point, goal: Point, *args, **kwargs) -> None:
+    def __init__(
+            self,
+            scene: GLScene,
+            start: Point,
+            goal: Point,
+            *args,
+            **kwargs
+        ) -> None:
         self.scene = scene
         self._start = start
         self._goal = goal
@@ -33,19 +40,21 @@ class VisibilityGraphPlanner:
         self._update_start_edges()
 
     def _update_start_edges(self) -> None:
+        start_idx = self.n_vertices
         #Start to polygons' vertices
         for j, vertex in enumerate(self.vertices):
             segment = Segment(self._start, vertex)
             if self.is_segment_free(segment):
-                self.graph[self.n_vertices][j] = segment.len()
+                self.graph[start_idx][j] = segment.len()
             else:
-                self.graph[self.n_vertices][j] = -1
+                self.graph[start_idx][j] = -1
         
+        goal_idx = start_idx + 1
         segment = Segment(self._start, self._goal)
         if self.is_segment_free(segment):
-            self.graph[self.n_vertices + 1][self.n_vertices] = segment.len()
+            self.graph[goal_idx][start_idx] = segment.len()
         else:
-            self.graph[self.n_vertices + 1][self.n_vertices] = -1
+            self.graph[goal_idx][start_idx] = -1
 
     @property
     def goal(self) -> Point:
@@ -57,13 +66,15 @@ class VisibilityGraphPlanner:
         self._update_goal_edges()
 
     def _update_goal_edges(self) -> None:
+        goal_idx = self.n_vertices + 1
+
         #Goal to all other vertices
         for j, vertex in enumerate(self.vertices + [self._start]):
             segment = Segment(self._goal, vertex)
             if self.is_segment_free(segment):
-                self.graph[self.n_vertices + 1][j] = segment.len()
+                self.graph[goal_idx][j] = segment.len()
             else:
-                self.graph[self.n_vertices + 1][j] = -1
+                self.graph[goal_idx][j] = -1
 
 
     def lines_intersect(self, line_1: Segment, line_2: Segment) -> bool:
@@ -115,7 +126,12 @@ class VisibilityGraphPlanner:
                 return polygon
         return None
 
-    def is_inner_diagonal(self, start: Point, goal: Point, polygon: Polygon) -> bool:
+    def is_inner_diagonal(
+            self,
+            start: Point,
+            goal: Point,
+            polygon: Polygon
+        ) -> bool:
         n_vertices = len(polygon.points)
         start_idx = polygon.points.index(start)
         prev_start = polygon.points[(start_idx + 1) % n_vertices]
@@ -196,7 +212,14 @@ class VisibilityGraphPlanner:
 
 
 class ReducedVisibilityGraphPlanner(VisibilityGraphPlanner):
-    def __init__(self, scene: GLScene, start: Point, goal: Point, *args, **kwargs) -> None:
+    def __init__(
+            self,
+            scene: GLScene,
+            start: Point,
+            goal: Point,
+            *args,
+            **kwargs
+        ) -> None:
         super().__init__(scene, start, goal, *args, **kwargs)
         self.filter_static_edges()
         self.filter_start_edges()
@@ -216,22 +239,24 @@ class ReducedVisibilityGraphPlanner(VisibilityGraphPlanner):
                 self.graph[i][j] = -1
 
     def filter_start_edges(self) -> None:
+        start_idx = self.n_vertices
         for j, vertex in enumerate(self.vertices):
-            if self.graph[self.n_vertices][j] == -1:
+            if self.graph[start_idx][j] == -1:
                 continue
             if self.is_tangent(self._start, vertex):
-                self.graph[self.n_vertices][j] = Segment(self._start, vertex).len()
+                self.graph[start_idx][j] = Segment(self._start, vertex).len()
             else:
-                self.graph[self.n_vertices][j] = -1
+                self.graph[start_idx][j] = -1
 
     def filter_goal_edges(self) -> None:
+        goal_idx = self.n_vertices + 1
         for j, vertex in enumerate(self.vertices):
-            if self.graph[self.n_vertices + 1][j] == -1:
+            if self.graph[goal_idx][j] == -1:
                 continue
             if self.is_tangent(self._goal, vertex):
-                self.graph[self.n_vertices + 1][j] = Segment(self._goal, vertex).len()
+                self.graph[goal_idx][j] = Segment(self._goal, vertex).len()
             else:
-                self.graph[self.n_vertices + 1][j] = -1
+                self.graph[goal_idx][j] = -1
 
     def same_obstacle(self, start: Point, goal: Point) -> bool:
         start_polygon = self.get_vertex_polygon(start)

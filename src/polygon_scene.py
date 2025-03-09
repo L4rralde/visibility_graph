@@ -6,14 +6,24 @@ from shapes import Polygon, Segment
 from planner import VisibilityGraphPlanner, ReducedVisibilityGraphPlanner
 
 
+default_polygons = [
+    Polygon([[-0.8, 0.2], [-0.6, 0.6], [-0.5, 0.4], [-0.15, 0.27]]),
+    Polygon([[-0.5, -0.6], [-0.8, -0.6], [-0.2, -0.4], [-0.46, -0.92]]),
+    Polygon([[0.33, -0.12], [0, -0.2], [0.2, 0.2], [0.4, 0.04], [0.8, 0.2], [0.62, -0.27]])
+]
+
 class PolygonScene(GLScene):
-    def __init__(self, title: str, width: int, height: int, max_fps: int) -> None:
+    def __init__(
+            self,
+            title: str,
+            width: int,
+            height: int,
+            max_fps: int = 60,
+            *args,
+            **kwargs
+        ) -> None:
         super().__init__(title, width, height, max_fps)
-        self.polygons = [
-            Polygon([[-0.8, 0.2], [-0.6, 0.6], [-0.5, 0.4], [-0.15, 0.27]]),
-            Polygon([[-0.5, -0.6], [-0.8, -0.6], [-0.2, -0.4], [-0.46, -0.92]]),
-            Polygon([[0.33, -0.125], [0, -0.2], [0.2, 0.2], [0.4, 0.045], [0.8, 0.2], [0.62, -0.27]])
-        ]
+        self.polygons = kwargs.get("polygons", default_polygons)
         self.shortest_path = None
 
     def render(self) -> None:
@@ -23,8 +33,16 @@ class PolygonScene(GLScene):
 
 
 class VisibilityGraphScene(PolygonScene):
-    def __init__(self, title: str, width: int, height: int, max_fps: int, *args, **kwargs) -> None:
-        super().__init__(title, width, height, max_fps)
+    def __init__(
+            self,
+            title: str,
+            width: int,
+            height: int,
+            max_fps: int,
+            *args,
+            **kwargs
+        ) -> None:
+        super().__init__(title, width, height, max_fps, *args, **kwargs)
         complete = kwargs.get("complete", False)
         if complete:
             self.planner = VisibilityGraphPlanner(
@@ -53,17 +71,20 @@ class VisibilityGraphScene(PolygonScene):
                 Segment(start, goal).draw()
 
         GLUtils.draw_points([self.planner.start, self.planner.goal])
+
+        start_idx = self.planner.n_vertices
         for j, vertex in enumerate(self.planner.vertices):
-            if self.planner.graph[self.planner.n_vertices][j] == -1:
+            if self.planner.graph[start_idx][j] == -1:
                 continue
             Segment(self.planner.start, vertex).draw()
 
+        goal_idx = start_idx + 1
         for j, vertex in enumerate(self.planner.vertices):
-            if self.planner.graph[self.planner.n_vertices + 1][j] == -1:
+            if self.planner.graph[goal_idx][j] == -1:
                 continue
             Segment(self.planner.goal, vertex).draw()
 
-        if self.planner.graph[self.planner.n_vertices + 1][self.planner.n_vertices] != -1:
+        if self.planner.graph[goal_idx][start_idx] != -1:
             Segment(self.planner.goal, self.planner.start).draw()
 
     def get_inputs(self) -> None:

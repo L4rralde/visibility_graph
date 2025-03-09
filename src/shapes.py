@@ -2,7 +2,7 @@ from OpenGL.GL import *
 from OpenGL.GLU import *
 import numpy as np
 
-from scene.scenes import Point, GLUtils, GLScene
+from scene.scenes import Point, GLUtils
 
 class Segment:
     def __init__(self, point_i: Point, point_j: Point) -> None:
@@ -50,4 +50,8 @@ class Path:
         self.points = points
 
     def draw(self) -> None:
-        GLUtils.draw_line(self.points, size=2, color=(0.5, 0.5, 0.5, 1))
+        GLUtils.draw_line(
+            self.points,
+            size=2,
+            color=(0.5, 0.5, 0.5, 1)
+        )
