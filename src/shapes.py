@@ -1,5 +1,6 @@
 from OpenGL.GL import *
 from OpenGL.GLU import *
+import numpy as np
 
 from scene.scenes import Point, GLUtils, GLScene
 
@@ -16,6 +17,19 @@ class Segment:
             (self.points[0].y - self.points[1].y)**2
         )**0.5
 
+    @property
+    def displacement(self) -> list:
+        return [
+            self.points[1].y - self.points[0].y,
+            self.points[1].x - self.points[0].x
+        ]
+
+    @property
+    def angle(self) -> float:
+        return np.arctan2(
+            self.points[1].y - self.points[0].y,
+            self.points[1].x - self.points[0].x
+        )
 
 class Polygon:
     def __init__(self, points: list) -> None:
@@ -25,6 +39,7 @@ class Polygon:
             self.points = [Point(*point) for point in points]
         else:
             raise RuntimeError("Not recgonized data type")
+        self.len = len(self.points)
 
     def draw(self) -> None:
         GLUtils.draw_polygon(self.points)
@@ -35,9 +50,4 @@ class Path:
         self.points = points
 
     def draw(self) -> None:
-        glPointSize(2)
-        glColor(0.5, 0.5, 0.5, 1)
-        glBegin(GL_LINE_STRIP)
-        for point in self.points:
-            glVertex2f(point.x, point.y)
-        glEnd()
+        GLUtils.draw_line(self.points, size=2, color=(0.5, 0.5, 0.5, 1))

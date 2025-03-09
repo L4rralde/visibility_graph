@@ -3,7 +3,7 @@ import pygame
 
 from scene.scenes import Point, GLUtils, GLScene
 from shapes import Polygon, Segment
-from planner import VisibilityGraphPlanner
+from planner import VisibilityGraphPlanner, ReducedVisibilityGraphPlanner
 
 
 class PolygonScene(GLScene):
@@ -21,14 +21,27 @@ class PolygonScene(GLScene):
         for polygon in self.polygons:
             polygon.draw()
 
-def positive_arctan2(y: np.ndarray, x: np.ndarray) -> np.ndarray:
-    return (np.arctan2(y, x) + 2*np.pi) % (2 * np.pi)
-
 
 class VisibilityGraphScene(PolygonScene):
-    def __init__(self, title: str, width: int, height: int, max_fps: int) -> None:
+    def __init__(self, title: str, width: int, height: int, max_fps: int, *args, **kwargs) -> None:
         super().__init__(title, width, height, max_fps)
-        self.planner = VisibilityGraphPlanner(self, Point(-0.9, 0.9), Point(0.9, 0.9))
+        complete = kwargs.get("complete", False)
+        if complete:
+            self.planner = VisibilityGraphPlanner(
+                self,
+                Point(-0.9, 0.9),
+                Point(0.9, 0.9),
+                *args,
+                **kwargs
+            )
+        else:
+            self.planner = ReducedVisibilityGraphPlanner(
+                self,
+                Point(-0.9, 0.9),
+                Point(0.9, 0.9),
+                *args,
+                **kwargs
+            )
 
     def draw_visibility_graph(self):
         for i in range(1, self.planner.n_vertices):

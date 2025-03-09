@@ -10,7 +10,7 @@ from shapes import Segment, Polygon, Path
 EPS = sys.float_info.epsilon
 
 class VisibilityGraphPlanner:
-    def __init__(self, scene: GLScene, start: Point, goal: Point) -> None:
+    def __init__(self, scene: GLScene, start: Point, goal: Point, *args, **kwargs) -> None:
         self.scene = scene
         self._start = start
         self._goal = goal
@@ -121,12 +121,10 @@ class VisibilityGraphPlanner:
         prev_start = polygon.points[(start_idx + 1) % n_vertices]
         next_to_start = polygon.points[(start_idx - 1) % n_vertices]
 
-        angle = np.arctan2(goal.y - start.y, goal.x - start.x)
-        prev_angle = np.arctan2(prev_start.y - start.y, prev_start.x - start.x)
-        next_to_angle = np.arctan2(
-            next_to_start.y - start.y,
-            next_to_start.x - start.x
-        )
+        angle = Segment(start, goal).angle
+        prev_angle = Segment(start, prev_start).angle
+        next_to_angle = Segment(start, next_to_start).angle
+
         while angle < next_to_angle:
             angle += 2*np.pi
         while prev_angle < next_to_angle:
@@ -195,3 +193,80 @@ class VisibilityGraphPlanner:
         vertices_path = [all_vertices[vertex_i] for vertex_i in path]
 
         return Path(vertices_path)
+
+
+class ReducedVisibilityGraphPlanner(VisibilityGraphPlanner):
+    def __init__(self, scene: GLScene, start: Point, goal: Point, *args, **kwargs) -> None:
+        super().__init__(scene, start, goal, *args, **kwargs)
+        self.filter_static_edges()
+        self.filter_start_edges()
+        self.filter_goal_edges()
+
+    def filter_static_edges(self) -> None:
+        for i in range(1, self.n_vertices):
+            start = self.vertices[i]
+            for j in range(i):
+                goal = self.vertices[j]
+                if self.graph[i][j] == -1:
+                    continue
+                if self.same_obstacle(start, goal):
+                    continue
+                if self.is_bitangent(start, goal):
+                    continue
+                self.graph[i][j] = -1
+
+    def filter_start_edges(self) -> None:
+        for j, vertex in enumerate(self.vertices):
+            if self.graph[self.n_vertices][j] == -1:
+                continue
+            if self.is_tangent(self._start, vertex):
+                self.graph[self.n_vertices][j] = Segment(self._start, vertex).len()
+            else:
+                self.graph[self.n_vertices][j] = -1
+
+    def filter_goal_edges(self) -> None:
+        for j, vertex in enumerate(self.vertices):
+            if self.graph[self.n_vertices + 1][j] == -1:
+                continue
+            if self.is_tangent(self._goal, vertex):
+                self.graph[self.n_vertices + 1][j] = Segment(self._goal, vertex).len()
+            else:
+                self.graph[self.n_vertices + 1][j] = -1
+
+    def same_obstacle(self, start: Point, goal: Point) -> bool:
+        start_polygon = self.get_vertex_polygon(start)
+        goal_polygon = self.get_vertex_polygon(goal)
+        return start_polygon == goal_polygon
+
+    def is_bitangent(self, edga_a: Point, edga_b: Point) -> bool:
+        return (
+            self.is_tangent(edga_a, edga_b) and
+            self.is_tangent(edga_b, edga_a)
+        )
+
+    def is_tangent(self, start: Point, goal: Point) -> bool:
+        polygon = self.get_vertex_polygon(goal)
+        if polygon is None:
+            raise RuntimeError("Goal edge must be a polygon edge")
+        goal_edge_idx = polygon.points.index(goal)
+        prev_goal_edge = polygon.points[(goal_edge_idx + 1) % polygon.len]
+        next_goal_edge = polygon.points[(goal_edge_idx - 1) % polygon.len]
+        start_goal_disp = Segment(start, goal).displacement
+        goal_prev_disp = Segment(goal, prev_goal_edge).displacement
+        goal_next_disp = Segment(goal, next_goal_edge).displacement
+        
+        #Cross product check
+        prev_cross = np.cross(start_goal_disp, goal_prev_disp)
+        next_cross = np.cross(start_goal_disp, goal_next_disp)
+        same_orientation = prev_cross * next_cross > 0
+        return same_orientation
+
+    @VisibilityGraphPlanner.start.setter
+    def start(self, point: Point) -> None:
+        VisibilityGraphPlanner.start.fset(self, point)
+        self.filter_start_edges()
+
+    @VisibilityGraphPlanner.goal.setter
+    def goal(self, point: Point) -> None:
+        VisibilityGraphPlanner.goal.fset(self, point)
+        self.filter_goal_edges()
