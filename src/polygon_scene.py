@@ -74,3 +74,15 @@ class VisibilityGraphScene(PolygonScene):
         super().render()
         self.draw_visibility_graph()
         self.shortest_path.draw()
+        GLUtils.draw_point(
+            self.planner.start.x,
+            self.planner.start.y,
+            5,
+            color = (1, 1, 1, 1)
+        )
+        GLUtils.draw_point(
+            self.planner.goal.x,
+            self.planner.goal.y,
+            10,
+            color = (1, 1, 1, 1)
+        )
