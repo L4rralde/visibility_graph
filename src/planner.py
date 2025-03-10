@@ -21,11 +21,7 @@ class VisibilityGraphPlanner:
         self.scene = scene
         self._start = start
         self._goal = goal
-        self.vertices = [
-            vertex
-            for polygon in self.scene.polygons
-            for vertex in polygon.points
-        ]
+        self.vertices = self.get_vertices()
         self.n_vertices = len(self.vertices)
         self.graph = np.zeros((self.n_vertices + 2, self.n_vertices + 2))
         self.reset_static_graph()
@@ -79,6 +75,12 @@ class VisibilityGraphPlanner:
             else:
                 self.graph[goal_idx][j] = -1
 
+    def get_vertices(self) -> list:
+        return [
+            vertex
+            for polygon in self.scene.polygons
+            for vertex in polygon.points
+        ]
 
     def lines_intersect(self, line_1: Segment, line_2: Segment) -> bool:
         if line_1.points[0] in line_2.points:
@@ -231,6 +233,22 @@ class ReducedVisibilityGraphPlanner(VisibilityGraphPlanner):
         self.filter_static_edges()
         self.filter_start_edges()
         self.filter_goal_edges()
+
+    def get_vertices(self) -> list:
+        #return super().get_vertices()
+        vertices = []
+        for polygon in self.scene.polygons:
+            for i, vertex in enumerate(polygon.points):
+                prev_vertex = polygon.points[(i - 1) % polygon.len]
+                next_vertex = polygon.points[(i + 1) % polygon.len]
+                cross = np.cross(
+                    [vertex.x - prev_vertex.x, vertex.y - prev_vertex.y],
+                    [next_vertex.x - vertex.x, next_vertex.y - vertex.y]
+                )
+                if cross > 0:
+                    continue
+                vertices.append(vertex)
+        return vertices
 
     def filter_static_edges(self) -> None:
         for i in range(1, self.n_vertices):
