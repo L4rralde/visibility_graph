@@ -13,6 +13,7 @@ default_polygons = [
     Polygon([[0.33, -0.12], [0, -0.2], [0.2, 0.2], [0.4, 0.04], [0.8, 0.2], [0.62, -0.27]])
 ]
 
+
 class PolygonScene(GLScene):
     def __init__(
             self,
@@ -108,7 +109,7 @@ class VisibilityGraphScene(PolygonScene):
 
     def update(self) -> None:
         super().update()
-        self.shortest_path = self.planner.shortest_path()
+        self.shortest_path = self.planner.shortest_path
         if not self.pause:
             self.driver.update(self.delta_time)
 

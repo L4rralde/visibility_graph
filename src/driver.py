@@ -20,7 +20,7 @@ class ConstantVelocityParticle:
 
         if self._speed == 0:
             return
-        shortest_path = self.planner.shortest_path()
+        shortest_path = self.planner.shortest_path
         current = self.planner.start
         next = shortest_path[-2]
 

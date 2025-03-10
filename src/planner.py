@@ -29,6 +29,7 @@ class VisibilityGraphPlanner:
         self.n_vertices = len(self.vertices)
         self.graph = np.zeros((self.n_vertices + 2, self.n_vertices + 2))
         self.reset_static_graph()
+        self.shortest_path = self.get_shortest_path()
 
     @property
     def start(self) -> Point:
@@ -38,6 +39,7 @@ class VisibilityGraphPlanner:
     def start(self, point: Point) -> None:
         self._start = point
         self._update_start_edges()
+        self.shortest_path = self.get_shortest_path()
 
     def _update_start_edges(self) -> None:
         start_idx = self.n_vertices
@@ -64,6 +66,7 @@ class VisibilityGraphPlanner:
     def goal(self, point: Point) -> None:
         self._goal = point
         self._update_goal_edges()
+        self.shortest_path = self.get_shortest_path()
 
     def _update_goal_edges(self) -> None:
         goal_idx = self.n_vertices + 1
@@ -176,7 +179,7 @@ class VisibilityGraphPlanner:
         #Goal to all other vertices
         self._update_goal_edges()
 
-    def shortest_path(self, start: Point = None, goal: Point = None) -> list:
+    def get_shortest_path(self, start: Point = None, goal: Point = None) -> list:
         if start is None:
             start = self._start
         if goal is None:
@@ -188,13 +191,13 @@ class VisibilityGraphPlanner:
         j = self.n_vertices + 1
         i = self.n_vertices
 
-        _, predecessors = dijkstra(
+        dist_matrix, predecessors = dijkstra(
             csgraph=graph,
             directed=False,
             indices = i,
             return_predecessors=True
         )
-        
+        #print(dist_matrix[self.n_vertices + 1])
         path = []
 
         current = j
