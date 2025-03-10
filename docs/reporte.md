@@ -39,7 +39,7 @@ Para construir el grafo de visibilidad, se recorren todos los vértices y se det
 <figure>
     <img src='vis_graph.jpeg' alt='visibility graph' />
     <figcaption>
-        Figura 1. Grafo de visibilidad de un ambiente con obstáculos pologonales.
+        Figura 1. Grafo de visibilidad de un ambiente con obstáculos poligonales.
     </figcaption>
 </figure>
 
@@ -139,13 +139,6 @@ Un segmento es tangente a un polígono si este polígono se encuentra en uno de 
 Por otro lado, se define como recta bitangente a dos obstáculos si en sus extremos coincide con los vértices de estos dos obstáculos y es tangente con cada uno de ellos.
 
 En el programa, se determina si una recta es tangente utilizando el producto cruz de los vectores que forman los segmentos. Si las aristas están del mismo lado, entonces el producto cruz de cada arista con respecto al segmento de conexión producirá un vector con el mismo sentido. Si no, tendrán sentidos opuestos.
-
-<figure>
-    <img src='reduced_vis_graph.jpeg' alt='reduced visibility graph sim' />
-    <figcaption>
-        Figura 5. Simulación del grafo de visibilidad reducido.
-    </figcaption>
-</figure>
 
 ## Experimentos
 
