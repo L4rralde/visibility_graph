@@ -1,5 +1,11 @@
 # Grafo de Visibilidad
 
+[![Youtube video](docs/vis_graph.webp)](https://www.youtube.com/watch?v=X8EhI1nT33o)
+
+## Reporte ténico
+
+Puedes leer el reporte técnico en el siguiente [enlace](docs/reporte.md).
+
 ## Instalación
 
 1. Crea un ambiente virtual en la carpeta del proyecto para no modificar las librerías que ya tienes instaladas.
